@@ -20,14 +20,16 @@ function trap.ncerr {
 }
 trap "trap.err" SIGINT
 
-git pull
-
 while :
 do
 [ "$HOME" > /dev/null ] || read -p "enter your home directory:" -e HOME
 [ "$HOME" > /dev/null ] && break
 done
 echo "done"
+
+echo "running git pull..."
+git pull
+echo "done."
 
 err
 echo -n "making filesystem... "
