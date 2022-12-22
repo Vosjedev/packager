@@ -41,14 +41,41 @@ dest="$(pwd)/packager"
 echo "done."
 cd "$src"
 echo "copying files..."
-cp -r ./ "$dest"
+for file in *
+do
+    if [[ "$file" == "."* ]]
+    then echo "skipped $file"
+    else cp -r "$file" "$HOME/.vosjedev/packager"
+    fi
+done
 echo "done."
+unerr
+
+while :
+do
+    ifs="$IFS"
+    IFS=":"
+    for dir in $PATH
+    do
+        if [ -x "$dir/wget" ]
+        then echo "wget found!"
+            wgetfound=1
+            break
+        fi
+    done
+    IFS="$ifs"
+    if [ "$wgetfound" == 1 ]
+    then break
+    else echo "no wget client found in PATH. please install wget as it is a dependency of vpm."
+        read -s -p "press enter when done."
+    fi
+done
 
 function mkshortcut {
     [ -d "$HOME/.local/" ] || mkdir "$HOME/.local"
     [ -d "$HOME/.local/bin" ] || mkdir "$HOME/.local/bin"
     ln -s "$dest/run.sh" "$HOME/.local/bin/vpm"
-    [ "$PATH" == *"$HOME/.local/bin"* ] || echo "your current \$PATH is '$PAtH' we could not find $HOME/.local/bin in there. please consider adding it to your path to be able to use vpm."
+    [ "$PATH" == *"$HOME/.local/bin"* ] || echo "your current \$PATH is '$PATH' we could not find $HOME/.local/bin in there. please consider adding it to your path to be able to use vpm."
     echo "you can use now use vpm to run vosje's package manager."
 }
 while :
