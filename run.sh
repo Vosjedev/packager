@@ -17,7 +17,8 @@ do
 done
 data="$(dirname "$file")"
 cd "$data"
-pwd
+data="$(pwd)"
+[[ $loglevel -ge 2 ]] && echo "data found in '$data'"
 
 # set $COLUMNS if unset
 if ! [ "$COLUMNS" > /dev/null ]
@@ -49,7 +50,7 @@ command    : description
 -h --help  : show this help
 "
     fi
-    exit $1
+    [ "$1" -ne 0 ] && exit $1
 }
 
 # test if there is any argument
@@ -59,6 +60,7 @@ command    : description
 
 # set functions
 function resolvefile {
+    [[ $loglevel -ge 2 ]] && echo "resolving $(pwd)/$1"
     linenr=1
     while read line
     do
@@ -77,7 +79,7 @@ function resolvefile {
             url     ) URL="$value"      ;;
             id      ) ID="$value"       ;;
             info    ) INFO="$value"     ;;
-            install ) InstallFile="$value" ;;
+            install ) InstallFile="$value"; [[ "$InstallFile" == none ]] && InstallFile="echo 'no installfile provided.'" ;;
             readme  ) README="$value"   ;;
             * ) echo -e "error on line $linenr:\n$line\n'$name' not found. see the github for more info on writing these files."; return 1 ;;
         esac
@@ -88,18 +90,83 @@ function listfile {
     resolvefile $1
     echo "name: $NAME | desciption: $INFO | type: $TYPE "
 }
-
+function searchfile {
+    sresult=''
+    result=''
+    results=''
+    nresults=''
+    cd repo
+    for repo in *
+    do
+        cd "$repo"
+        for file in *.vpmfile
+        do [[ "$file" == *"$1"*.vpmfile ]] && {
+            results="${results}repo/$repo/$file "
+        }
+        done
+        cd ..
+    done
+    cd ..
+    [[ "$2" == s ]] && {
+        resultcount=0
+        ifs="$IFS"
+        IFS=";"
+        for result in $results
+        do [[ "$result" == $1 ]] && nresults="$nresults $result" && ((resultcount++))
+        done
+        if [[ $resultcount -gt 1 ]]
+        then
+            echo "there are more than 1 results! which one do you want?"
+            cnt=1
+            for result in $nresults
+            do echo "$cnt: $result" ; ((cnt++))
+            done
+            read -p ' > ' in
+            cnt=1
+            for result in $nresults
+            do [[ $cnt -eq $in ]] && sresult="$result"
+            done
+        else sresult="$nresults"
+        fi
+    }
+}
 function install {
-    echo "not implemented yet"
+    skip=1
+    searchfile $1 s
+    cd "$data"
+    [[ "$sresult" == '' ]] && echo "no results found. run $0 -R to refresh the cache, and then try again."
+    resolvefile "$sresult"
+    cd "$data"
+    [[ "$TYPE" == program ]] || {
+        echo "OOPS! file is not a program."
+        return
+    }
+    download $URL
+    eval "$InstallFile"
+    cd "$data"
+    cp "$sresult" "$HOME/.vosjedev/$ID/info.vpmfile"
+    echo "done."
 }
 function download {
-    echo "not implemented yet"
+    case $FORMAT in
+        git     ) cd "$HOME/.vosjedev/" && git clone "$URL" && cd "$ID" && echo "download done."     ;;
+        *       ) echo "error: unkown format."
+    esac
 }
 function remove {
     echo "not implemented yet"
+    skip=1
 }
 function search {
-    echo "not implemented yet"
+    skip=1
+    searchfile $1
+    [[ "$results" == '' ]] && {
+        echo "no results found for search $1."
+        return 1
+    }
+    for result in $results
+    do listfile $result
+    done
 }
 function list {
     case $1 in
@@ -120,6 +187,7 @@ function list {
     skip=1
 }
 function refresh {
+    rm -rf repo/*
     for repo in ./repolist/*.vpmfile
     do
         echo "'$repo' found!"
@@ -134,10 +202,10 @@ function refresh {
         cd repo
         [[ -d "$ID" ]] && {
             echo "repo $NAME already here. deleting it's cache..."
-            rm -rf "$NAME"
+            rm -rf "$ID"
             }
-        mkdir "$NAME"
-        cd "$NAME"
+        mkdir "$ID"
+        cd "$ID"
             case $FORMAT in
                 http/zip    ) wget -O repofiles.zip "$URL" && unzip repofiles.zip && echo "done!"
             esac
@@ -153,16 +221,24 @@ do
     then skip=0
     else
     #
+    if [[ "$2" == "-"* ]] || [[ "$2" == '' ]]
+    then echo "[=======| $1 |=======]"
+    else echo "[======| $1 $2 |======]"
+    fi
     case $1 in
-        -g | --get      ) download $2 && install $2
+        -g | --get      ) install $2
                             skip=1 ;;
         -r | --remove   ) remove $2 ;;
         -l | --list     ) list $2 ;;
         -h | --help     ) help 0 ;;
         -R | --refresh  ) refresh ;;
-        -* | --*        ) echo "option $1 not found... run '$0 -h' to get help." ;;
-        *               ) help 1
+        -s | --search   ) search $2 ;;
+        -* | --*        ) echo "option $1 not found... run '$0 -h' to get help."
+                            [[ "$2" == -"*" ]] || skip=1
+                            ;;
+        *               ) help 0
     esac
     fi
     shift
+    cd "$data"
 done
