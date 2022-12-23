@@ -3,13 +3,13 @@ Vosje's package manager
 # 
   
 This is my package manager written in bash. you can use it to download my programs from my github.  
-To add a repository, use the vpmfile from the repository's owner. Ask them if they did not provide one.
-
-## writing my own repofile.
-This is a guide on writing your own repofile. After each line is an explanation.
-! a program will later be provided to do this for you.
-Make sure the filename does not contain any spaces.
-file: `my-repo.vpmfile`
+To add a repository, use the vpmfile from the repository's owner. Ask them if they did not provide one.  
+  
+## writing my own repofile.  
+This is a guide on writing your own repofile. After each line is an explanation.  
+! a program will later be provided to do this for you.  
+Make sure the filename does not contain any spaces.  
+file: `my-repo.vpmfile`  
 ```
 /# this is a comment. it wil be skipped when reading the file.
 type    = repo
@@ -38,8 +38,8 @@ format  = http/zip
 
 ```
 ### the repolist:
-A repolist is a bunch of files containing information about your program.
-It looks like this:
+A repolist is a bunch of files containing information about your program.  
+The files look like this:  
 file: `my-program.vpmfile`
 ```
 type    = program
@@ -76,8 +76,8 @@ info    = a short desciption about my program
 readme  = README.md
 
 ```
-! a program will later be provided to write these file's.
-
-thanks for using vpm! if you find a bug, or have a feature request, make a new issue on github.
-
+! a program will later be provided to write these file's.  
+  
+thanks for using vpm! if you find a bug, or have a feature request, make a new issue on github.  
+  
 [ [github](https://github.com/Vosjedev/packager) || [new issue](https://github.com/Vosjedev/packager/issues/new/choose) ]
