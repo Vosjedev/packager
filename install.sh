@@ -28,7 +28,7 @@ done
 echo "done"
 
 echo "running git pull..."
-git pull
+#git pull
 echo "done."
 
 err
@@ -36,18 +36,24 @@ echo -n "making filesystem... "
 cd "$HOME"
 [ -d .vosjedev ] || mkdir .vosjedev
 cd .vosjedev
+[ -d packager ] && {
+    echo packager already installed. removing it...
+    rm -rf packager
+}
 dest="$(pwd)/packager"
+mkdir "$dest"
 
 echo "done."
 cd "$src"
 echo "copying files..."
 for file in *
 do
-    if [[ "$file" == "."* ]]
+    if [[ "$file" == "."* ]] || [[ "$file" == repo ]]
     then echo "skipped $file"
-    else cp -r "$file" "$HOME/.vosjedev/packager"
+    else cp -r "$file" "$dest/$file"
     fi
 done
+mkdir "$dest/repo"
 echo "done."
 unerr
 
