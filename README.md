@@ -54,8 +54,6 @@ url     = URL
 format  = git
 /# current format's are:
 /# git : clone the program using git.
-install = ./install.sh
-/# the command run inside the program's folder after download
 info    = a short desciption about my program
 /# tell us something about your program. keep it short!
 readme  = README.md
@@ -71,13 +69,17 @@ name    = my program
 id      = my-program
 url     = URL
 format  = git
-install = ./install.sh
 info    = a short desciption about my program
 readme  = README.md
 
 ```
 ! a program will later be provided to write these file's.  
-  
+to autorun a script at startup, write an install.vpmscript (docs coming later.) and put  
+```
+R file_to_run
+```  
+in it.
+
 thanks for using vpm! if you find a bug, or have a feature request, make a new issue on github.  
   
 [ [github](https://github.com/Vosjedev/packager) || [new issue](https://github.com/Vosjedev/packager/issues/new/choose) ]

@@ -5,23 +5,23 @@ loglevel=1
 file="$(which "$0")"
 while :
 do
-    if [ -L "$file" ]
+    if [[ -L "$file" ]]
     then [[ $loglevel -ge 2 ]] && echo "Symlink! '$file'"
         file="$(readlink "$file")"
-    elif [ -d "$file" ]
+    elif [[ -d "$file" ]]
     then echo "error while finding data directory"; exit 1
-    elif [ -f "$file" ]
-    then [ "$loglevel" -ge 2 ] && echo "found orginal! '$file'"
+    elif [[ -f "$file" ]]
+    then [[ "$loglevel" -ge 2 ]] && echo "found orginal! '$file'"
         break
     fi
 done
 data="$(dirname "$file")"
-cd "$data"
+cd "$data" || exit
 data="$(pwd)"
 [[ $loglevel -ge 2 ]] && echo "data found in '$data'"
 
 # set $COLUMNS if unset
-if ! [ "$COLUMNS" > /dev/null ]
+if ! [[ "$COLUMNS" > /dev/null ]]
 then COLUMNS="$(tput cols)"
 fi
 
@@ -50,7 +50,7 @@ command    : description
 -h --help  : show this help
 "
     fi
-    [ "$1" -ne 0 ] && exit $1
+    [[ "$1" -ne 0 ]] && exit "$1"
 }
 
 # test if there is any argument
@@ -58,13 +58,33 @@ command    : description
 #     help 1
 # }
 
+# .vpmscript handeling
+function script {
+    line=1
+    # shellcheck disable=SC2034
+    while read -r cmd a1 a2 a3 a4 a5 a6 arg
+    do
+        case $cmd in
+            R   ) eval "$a1"        ;;
+            r   ) rm -rf "$a1"      ;;
+            t   ) touch "$a1"       ;;
+            d   ) mkdir "$a1"       ;;
+            l   ) ln -s "$a1" "$a2" ;;
+            c   ) cp -r "$a1" "$a2" ;;
+            m   ) mv -r "$a1" "$a2" ;;
+            *   ) echo "error: '$1'@'$line': '$cmd' not found."
+        esac
+    done < "$1"
+    ((line++))
+}
+
 # set functions
 function resolvefile {
     [[ $loglevel -ge 2 ]] && echo "resolving $(pwd)/$1"
     linenr=1
-    while read line
+    # shellcheck disable=SC2034,SC2162
+    while read name eq value
     do
-        read name eq value <<< "$line"
         # [[ "$eq" == "=" ]] && {
         #     [[ "$name" == "/#" ]] || {
         #     echo -e "error on line $linenr:\nexpected '$name = $value' but got '$name $eq $value'."
@@ -79,15 +99,14 @@ function resolvefile {
             url     ) URL="$value"      ;;
             id      ) ID="$value"       ;;
             info    ) INFO="$value"     ;;
-            install ) InstallFile="$value"; [[ "$InstallFile" == none ]] && InstallFile="echo 'no installfile provided.'" ;;
             readme  ) README="$value"   ;;
             * ) echo -e "error on line $linenr:\n$line\n'$name' not found. see the github for more info on writing these files."; return 1 ;;
         esac
     ((linenr++))
-    done < $1
+    done < "$1"
 }
 function listfile {
-    resolvefile $1
+    resolvefile "$1"
     echo "name: $NAME | desciption: $INFO | type: $TYPE "
 }
 function searchfile {
@@ -95,10 +114,10 @@ function searchfile {
     result=''
     results=''
     nresults=''
-    cd repo
+    cd repo || return 1
     for repo in *
     do
-        cd "$repo"
+        cd "$repo" || return 1
         for file in *.vpmfile
         do [[ "$file" == *"$1"*.vpmfile ]] && {
             results="${results}repo/$repo/$file "
@@ -112,7 +131,7 @@ function searchfile {
         ifs="$IFS"
         IFS=";"
         for result in $results
-        do [[ "$result" == $1 ]] && nresults="$nresults $result" && ((resultcount++))
+        do [[ "$result" == "$1" ]] && nresults="$nresults $result" && ((resultcount++))
         done
         if [[ $resultcount -gt 1 ]]
         then
@@ -121,28 +140,31 @@ function searchfile {
             for result in $nresults
             do echo "$cnt: $result" ; ((cnt++))
             done
+            # shellcheck disable=SC2162
             read -p ' > ' in
             cnt=1
             for result in $nresults
             do [[ $cnt -eq $in ]] && sresult="$result"
             done
-        else sresult="$nresults"
+        else sresult="$nresults"; [[ $loglevel -ge 2 ]] && echo "only one result found."
         fi
+        IFS="$ifs"
     }
 }
 function install {
     skip=1
-    searchfile $1 s
-    cd "$data"
+    searchfile "$1" s
+    cd "$data" || return 1
     [[ "$sresult" == '' ]] && echo "no results found. run $0 -R to refresh the cache, and then try again."
     resolvefile "$sresult"
-    cd "$data"
+    cd "$data" || return 1
     [[ "$TYPE" == program ]] || {
         echo "OOPS! file is not a program."
         return
     }
-    download $URL
-    eval "$InstallFile"
+    download "$URL"
+    [[ -f install.vpmscript ]] && script install.vpmscript
+    # shellcheck disable=SC2164
     cd "$data"
     cp "$sresult" "$HOME/.vosjedev/$ID/info.vpmfile"
     echo "done."
@@ -159,29 +181,28 @@ function remove {
 }
 function search {
     skip=1
-    searchfile $1
+    searchfile "$1"
     [[ "$results" == '' ]] && {
         echo "no results found for search $1."
         return 1
     }
     for result in $results
-    do listfile $result
+    do listfile "$result"
     done
 }
 function list {
     case $1 in
         cache ) 
-            cd "$data/repo"
+            cd "$data/repo" || return 1
             for repo in *
             do
-                [[ -d "$repo" ]] || continue
-                cd $repo
+                cd "$repo"|| continue
                 for program in *.vpmfile
-                do listfile $program
+                do listfile "$program"
                 done
                 cd ..
             done
-            cd "$data"
+            cd "$data" || return
     esac
 
     skip=1
@@ -199,12 +220,13 @@ function refresh {
             echo "OOPS! file is not a repository! skipping repo '$NAME' ..."
             continue
         }
-        cd repo
+        cd repo || return 1
         [[ -d "$ID" ]] && {
             echo "repo $NAME already here. deleting it's cache..."
             rm -rf "$ID"
             }
         mkdir "$ID"
+        # shellcheck disable=SC2164
         cd "$ID"
             case $FORMAT in
                 http/zip    ) wget -O repofiles.zip "$URL" && unzip repofiles.zip && echo "done!"
@@ -215,30 +237,28 @@ function refresh {
 
 skip=0
 # parse arguments
-for arg in $@
+until [[ $# -le 0 ]]
 do
-    if [ "$skip" == 1 ]
-    then skip=0
-    else
-    #
+    [[ "$skip" == 1 ]] && {
+        shift
+        continue
+    }
     if [[ "$2" == "-"* ]] || [[ "$2" == '' ]]
     then echo "[=======| $1 |=======]"
     else echo "[======| $1 $2 |======]"
     fi
     case $1 in
-        -g | --get      ) install $2
-                            skip=1 ;;
-        -r | --remove   ) remove $2 ;;
-        -l | --list     ) list $2 ;;
+        -g | --get      ) install "$2" ;;
+        -r | --remove   ) remove "$2" ;;
+        -l | --list     ) list "$2" ;;
         -h | --help     ) help 0 ;;
         -R | --refresh  ) refresh ;;
-        -s | --search   ) search $2 ;;
-        -* | --*        ) echo "option $1 not found... run '$0 -h' to get help."
+        -s | --search   ) search "$2" ;;
+        "-"*            ) echo "option $1 not found... run '$0 -h' to get help."
                             [[ "$2" == -"*" ]] || skip=1
                             ;;
         *               ) help 0
     esac
-    fi
     shift
-    cd "$data"
+    cd "$data" || exit 1
 done
