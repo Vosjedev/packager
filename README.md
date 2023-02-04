@@ -1,10 +1,19 @@
 # vpm  
 Vosje's package manager
 # 
-  
+
 This is my package manager written in bash. you can use it to download my programs from my github.  
 To add a repository, use the vpmfile from the repository's owner. Ask them if they did not provide one.  
-  
+
+## installation  
+**automatic (recommended)**  
+` curl -sS http://vosjedev.pii.at/vpm/install.sh | bash `  
+or manual:  
+` mkdir ~/.vosjedev && cd ~/.vosjedev && git clone https://github.com/vosjedev/packager `  
+and make sure wget is installed.  
+you can use ` mkdir -p "~/.local/bin" && ln -s ~/.vosjedev/packager/run.sh ~/.local/bin/vpm ` to make a symlink for vpm.  
+make sure ~/.local/bin is in your PATH.  
+
 ## writing my own repofile.  
 This is a guide on writing your own repofile. After each line is an explanation.  
 ! a program will later be provided to do this for you.  
