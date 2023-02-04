@@ -30,10 +30,10 @@ fi
 # \  \ \___ \___ \    0
 # function.
 function help {
-    echo "usage: $0 -[arguments] command query"
-    if [ "$COLUMNS" -ge 70 ]
-    then
-        echo "
+echo "usage: $0 -[arguments] command query"
+if [ "$COLUMNS" -ge 70 ]
+then
+echo "
 ,-------------------------------------------------------------------,
 | commands                      : discription                       |
 |-------------------------------------------------------------------|
@@ -44,13 +44,13 @@ function help {
 echo "
 '-------------------------------------------------------------------'
 "
-    else
-        echo "
+else
+echo "
 command    : description
 -h --help  : show this help
 "
-    fi
-    [[ "$1" -ne 0 ]] && exit "$1"
+fi
+[[ "$1" -ne 0 ]] && exit "$1"
 }
 
 # test if there is any argument
@@ -80,8 +80,12 @@ function script {
 
 # set functions
 function resolvefile {
-    [[ $loglevel -ge 2 ]] && echo "resolving $(pwd)/$1"
+    [[ $loglevel -ge 2 ]] && echo "resolving $1"
     linenr=1
+    for var in NAME TYPE FORMAT URL ID INFO README
+    do eval "$var=''"
+    done
+    [[ "$1" == '' ]] && return
     # shellcheck disable=SC2034,SC2162
     while read name eq value
     do
@@ -100,13 +104,15 @@ function resolvefile {
             id      ) ID="$value"       ;;
             info    ) INFO="$value"     ;;
             readme  ) README="$value"   ;;
+            install ) :;;
+            protected ) [[ "$value" == true ]] && return 1;;
             * ) echo -e "error on line $linenr:\n$line\n'$name' not found. see the github for more info on writing these files."; return 1 ;;
         esac
     ((linenr++))
     done < "$1"
 }
 function listfile {
-    resolvefile "$1"
+    resolvefile "$1" && \
     echo "name: $NAME | desciption: $INFO | type: $TYPE "
 }
 function searchfile {
@@ -114,13 +120,16 @@ function searchfile {
     result=''
     results=''
     nresults=''
-    cd repo || return 1
+    cd "$data/repo" || return 1
+    [[ "$loglevel" -ge 2 ]] && pwd
     for repo in *
     do
         cd "$repo" || return 1
+        [[ "$loglevel" -ge 2 ]] && pwd
         for file in *.vpmfile
         do [[ "$file" == *"$1"*.vpmfile ]] && {
-            results="${results}repo/$repo/$file "
+            # results="${results}repo/$repo/$file "
+            results+=("repo/$repo/$file")
         }
         done
         cd ..
@@ -128,27 +137,26 @@ function searchfile {
     cd ..
     [[ "$2" == s ]] && {
         resultcount=0
-        ifs="$IFS"
-        IFS=";"
-        for result in $results
-        do [[ "$result" == "$1" ]] && nresults="$nresults $result" && ((resultcount++))
+        for result in "${results[@]}"
+        do resolvefile "$result"
+            [[ "$NAME" == "$1" ]] && nresults+=("$result") && ((resultcount++))
         done
         if [[ $resultcount -gt 1 ]]
         then
             echo "there are more than 1 results! which one do you want?"
             cnt=1
-            for result in $nresults
-            do echo "$cnt: $result" ; ((cnt++))
+            for result in "${results[@]}"
+            do resolvefile "$result"
+                echo "$cnt: $NAME" ; ((cnt++))
             done
             # shellcheck disable=SC2162
             read -p ' > ' in
             cnt=1
-            for result in $nresults
+            for result in "${nresults[@]}"
             do [[ $cnt -eq $in ]] && sresult="$result"
             done
-        else sresult="$nresults"; [[ $loglevel -ge 2 ]] && echo "only one result found."
+        else sresult="${nresults[1]}"; [[ $loglevel -ge 2 ]] && echo "only one result found."
         fi
-        IFS="$ifs"
     }
 }
 function install {
@@ -176,33 +184,54 @@ function download {
     esac
 }
 function remove {
-    echo "not implemented yet"
+    cd "$HOME/.vosjedev" || return 1
+    for program in *
+    do
+        resolvefile "$program/info.vpmfile"
+        if [[ "$NAME" == "$1" ]]
+        then read -p "are you sure you want to remove program $NAME with id $ID? [Y/n] " in
+            case $in in
+                y | yes ) 
+                        [[ -f "remove.vpmscript" ]] && script remove.vmpscript
+                        rm -rf "$program"
+                    ;;
+                n | no ) return 0;;
+            esac
+        fi
+    done
     skip=1
 }
 function search {
     skip=1
     searchfile "$1"
-    [[ "$results" == '' ]] && {
+    [[ "${#results[@]}" -eq 0 ]] && {
         echo "no results found for search $1."
         return 1
     }
-    for result in $results
+    for result in "${results[@]}"
     do listfile "$result"
     done
 }
 function list {
     case $1 in
         cache ) 
-            cd "$data/repo" || return 1
-            for repo in *
-            do
+                cd "$data/repo" || return 1
+                for repo in *
+                do
                 cd "$repo"|| continue
                 for program in *.vpmfile
                 do listfile "$program"
                 done
                 cd ..
-            done
-            cd "$data" || return
+                done
+                cd "$data" || return
+            ;;
+        installed )
+                cd "$HOME/.vosjedev" || return 1
+                for dir in *
+                do listfile "$dir/info.vpmfile"
+                done
+            ;;
     esac
 
     skip=1
@@ -234,13 +263,14 @@ function refresh {
         cd ../..
     done
 }
-
+[[ -v debug ]] && set -x
 skip=0
 # parse arguments
 until [[ $# -le 0 ]]
 do
     [[ "$skip" == 1 ]] && {
         shift
+        skip=0
         continue
     }
     if [[ "$2" == "-"* ]] || [[ "$2" == '' ]]
@@ -262,3 +292,4 @@ do
     shift
     cd "$data" || exit 1
 done
+[[ -v debug ]] && set +x

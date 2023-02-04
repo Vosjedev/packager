@@ -111,6 +111,18 @@ do
 done
 
 cd "$dest" || exit
+echo "making a vpmfile"
+echo "protected = true
+type    = program
+name    = vpm
+id      = packager
+url     = https://github.com/vosjedev/packager
+format  = git
+install = ./install.sh
+info    = a packager
+readme  = README.md
+" >> info.vpmfile
+echo "done"
 echo "refreshing repolist"
 echo " > ./run.sh -R"
 ./run.sh -R
