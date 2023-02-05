@@ -258,7 +258,7 @@ function refresh {
         # shellcheck disable=SC2164
         cd "$ID"
             case $FORMAT in
-                http/zip    ) wget -O repofiles.zip "$URL" && unzip repofiles.zip && echo "done!"
+                http/zip    ) curl -# -o repofiles.zip "$URL" && unzip -q repofiles.zip && echo "done!"
             esac
         cd ../..
     done
