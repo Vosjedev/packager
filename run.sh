@@ -278,6 +278,7 @@ function update-all {
         case $FORMAT in
             git ) git pull
         esac
+        cd "$HOME/.vosjedev"
     done
 }
 
