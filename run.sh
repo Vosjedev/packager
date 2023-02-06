@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+
+
 loglevel=1
 #  get data dir
 file="$(which "$0")"
@@ -19,6 +21,8 @@ data="$(dirname "$file")"
 cd "$data" || exit
 data="$(pwd)"
 [[ $loglevel -ge 2 ]] && echo "data found in '$data'"
+
+[[ -v HOME ]] || HOME="$data/../../"
 
 # set $COLUMNS if unset
 if ! [[ "$COLUMNS" > /dev/null ]]
@@ -71,7 +75,7 @@ function script {
             d   ) mkdir "$a1"       ;;
             l   ) ln -s "$a1" "$a2" ;;
             c   ) cp -r "$a1" "$a2" ;;
-            m   ) mv -r "$a1" "$a2" ;;
+            m   ) cp -r "$a1" "$a2" && rm -rf "$a1" ;;
             *   ) echo "error: '$1'@'$line': '$cmd' not found."
         esac
     done < "$1"
@@ -263,6 +267,20 @@ function refresh {
         cd ../..
     done
 }
+
+function update {
+    cd "$HOME/.vosjedev"
+    for program in *
+    do
+        [[ ! -d "$program" ]] && continue
+        cd "$program"
+        resolvefile info.vpmfile
+        case $FORMAT in
+            git ) git pull
+        esac
+    done
+}
+
 [[ -v debug ]] && set -x
 skip=0
 # parse arguments
