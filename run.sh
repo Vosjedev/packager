@@ -42,9 +42,9 @@ echo "
 | commands                      : discription                       |
 |-------------------------------------------------------------------|
 | -h --help                     : show this help                    |
-| -R --refresh                  : refresh the cache                 |"
-# | -g --get                      : download and install a program    |
-# | -r --remove                   : remove a program                  |
+| -R --refresh                  : refresh the cache                 |
+| -g --get                      : download and install a program    |
+| -r --remove                   : remove a program                  |"
 echo "
 '-------------------------------------------------------------------'
 "
@@ -268,7 +268,7 @@ function refresh {
     done
 }
 
-function update {
+function update-all {
     cd "$HOME/.vosjedev"
     for program in *
     do
@@ -301,6 +301,7 @@ do
         -l | --list     ) list "$2" ;;
         -h | --help     ) help 0 ;;
         -R | --refresh  ) refresh ;;
+        -U | --update-all ) update-all ;;
         -s | --search   ) search "$2" ;;
         "-"*            ) echo "option $1 not found... run '$0 -h' to get help."
                             [[ "$2" == -"*" ]] || skip=1
