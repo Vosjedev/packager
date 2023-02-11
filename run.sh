@@ -2,7 +2,7 @@
 
 
 
-loglevel=1
+loglevel=0
 #  get data dir
 file="$(which "$0")"
 while :
@@ -101,6 +101,33 @@ function script {
     rm -f "$data/bash/$vpmscript_uid"
 }
 
+# http[s] downloader
+    if command -v axel
+    then
+        function dl {
+            axel "$1" -o "$2"
+        }
+    elif command -v curl
+    then
+        function dl {
+            echo "downloading \"$1\""
+            axel -# -o "$2" "$1"
+        }
+    elif command -v wget
+    then
+        function dl {
+            wget "$1" -O "$2"
+        }
+    else
+        echo -e "-------------\nno supported downloader found. make sure to have one of the following installed and in the PATH:\n"\
+        "axel: faster downloads\n"\
+        "curl: clean output (using -# argument)\n"\
+        "wget: great alternative\n"\
+        "-------------"
+        exit 1
+    fi
+#
+
 # set functions
 function resolvefile {
     [[ $loglevel -ge 2 ]] && echo "resolving $1"
@@ -136,7 +163,9 @@ function resolvefile {
 }
 function listfile {
     resolvefile "$1" && \
-    echo "name: $NAME | desciption: $INFO | type: $TYPE "
+    entry="name: $NAME | desciption: $INFO | type: $TYPE"
+    echo "${entry:0:$COLUMNS}"
+    unset entry
 }
 function searchfile {
     sresult=''
@@ -261,7 +290,7 @@ function list {
 }
 function refresh {
     rm -rf repo/*
-    for repo in ./repolist/*.vpmfile
+    for repo in "$data/repolist/"*".vpmfile"
     do
         echo "'$repo' found!"
         resolvefile "$repo"
@@ -281,7 +310,25 @@ function refresh {
         # shellcheck disable=SC2164
         cd "$ID"
             case $FORMAT in
-                http/zip    ) curl -# -o repofiles.zip "$URL" && unzip -q repofiles.zip && echo "done!"
+                http/zip )
+                    dl "$URL/repofiles.zip" repofiles.zip
+                    if command -v sha256sum
+                    then
+                        dl "$URL/checksum.txt" checksum.txt
+                        read -r CHECKSUM < "checksum.txt"
+                        if [[ "$CHECKSUM" == "$(sha256sum "repofiles.zip")" ]]
+                        then echo "checksum: $CHECKSUM matched"
+                        else echo -e "checksum $CHECKSUM failed to match.\ndo you want to continue?"
+                            read -rsn1 -p "[y for yes, anything else for no]" i
+                            case $i in
+                                y ) echo '';;
+                                * ) cd ../.. ;continue
+                            esac
+                        fi
+                    else echo "no sha256sum binary found in PATH."
+                    fi
+                    unzip -q repofiles.zip
+                    echo "done!"
             esac
         cd ../..
     done
