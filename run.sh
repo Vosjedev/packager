@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-
-
 loglevel=0
 #  get data dir
 file="$(which "$0")"
@@ -102,18 +100,18 @@ function script {
 }
 
 # http[s] downloader
-    if command -v axel
+    if command -v axel >/dev/null
     then
         function dl {
             axel "$1" -o "$2"
         }
-    elif command -v curl
+    elif command -v curl >/dev/null
     then
         function dl {
             echo "downloading \"$1\""
             axel -# -o "$2" "$1"
         }
-    elif command -v wget
+    elif command -v wget >/dev/null
     then
         function dl {
             wget "$1" -O "$2"
@@ -126,6 +124,11 @@ function script {
         "-------------"
         exit 1
     fi
+#
+# pager
+    if command -v less
+    then PAGER="$(which less) -E" && export PAGER
+    fi    
 #
 
 # set functions
