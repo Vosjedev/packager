@@ -329,6 +329,12 @@ function refresh {
                     fi
                     unzip -q repofiles.zip
                     echo "done!"
+                    ;;
+                git )
+                    cd ..
+                    rm -rf "$ID"
+                    git clone "$URL"
+                    cd "$ID" || { unreachable "if you see this, contact the owner of repo $NAME with id $ID because the id of the repo does not match the git destination."; cd ..; continue; }
             esac
         cd ../..
     done

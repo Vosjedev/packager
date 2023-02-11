@@ -36,6 +36,7 @@ format  = http/zip
 /# http/zip : downloads and extracts the file into the repo's directory. make sure it is a regular zip file with the repolist file's in its root.
 /# ________ : after download it wil download a checksum from URL.checksum to match with the checksum of the local copy. this is a sha256sum generated checksum.
 /# ________ : this means if your url is https://example.com/repo/vpm/repofiles.zip, the checksum wil be downloaded from https://example.com/repo/vpm/repofiles.zip.checksum.
+/# git      : clone URL using git clone command. no sha256sum support
 /# this option is disabled as only zip is currently supported for repos.
 /#
 /# make sure your file does not contain any empty lines, exept at the end.
