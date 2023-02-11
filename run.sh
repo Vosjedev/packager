@@ -231,7 +231,7 @@ function install {
 }
 function download {
     case $FORMAT in
-        git     ) cd "$HOME/.vosjedev/" && git clone "$URL" && cd "$ID" && echo "download done."     ;;
+        git     ) cd "$HOME/.vosjedev/" && git -p clone "$URL" && cd "$ID" && echo "download done."     ;;
         *       ) echo "error: unkown format."
     esac
 }
@@ -334,7 +334,7 @@ function refresh {
                 git )
                     cd ..
                     rm -rf "$ID"
-                    git clone "$URL"
+                    git -p clone "$URL"
                     cd "$ID" || { unreachable "if you see this, contact the owner of repo $NAME with id $ID because the id of the repo does not match the git destination."; cd ..; continue; }
             esac
         cd ../..
@@ -351,7 +351,7 @@ function update-all {
         echo "updating:"
         listfile "info.vpmfile"
         case $FORMAT in
-            git ) git --no-rebase pull
+            git ) git -p --no-rebase pull
         esac
         cd "$HOME/.vosjedev" || { echo "you should download and install vpm using the commands in the README."; exit 255;}
     done
