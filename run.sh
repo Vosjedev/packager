@@ -159,6 +159,7 @@ function resolvefile {
             readme  ) README="$value"   ;;
             install ) :;;
             protected ) PROTECTED="$value" ;;
+            '' ) : ;;
             * ) echo -e "error on line $linenr:\n$line\n'$name' not found. see the github for more info on writing these files."; return 1 ;;
         esac
     ((linenr++))
