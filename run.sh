@@ -155,7 +155,7 @@ function resolvefile {
             info    ) INFO="$value"     ;;
             readme  ) README="$value"   ;;
             install ) :;;
-            protected ) [[ "$value" == true ]] && return 1;;
+            protected ) PROTECTED="$value" ;;
             * ) echo -e "error on line $linenr:\n$line\n'$name' not found. see the github for more info on writing these files."; return 1 ;;
         esac
     ((linenr++))
@@ -240,6 +240,7 @@ function remove {
     for program in *
     do
         resolvefile "$program/info.vpmfile"
+        [[ "$PROTECTED" == true ]] && echo "can't remove protected program '$NAME'."
         if [[ "$NAME" == "$1" ]]
         then read -rp "are you sure you want to remove program $NAME with id $ID? [Y/n] " in
             case $in in
