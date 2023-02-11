@@ -317,9 +317,9 @@ function refresh {
             case $FORMAT in
                 http/zip )
                     dl "$URL" repofiles.zip
-                    if command -v sha256sum
+                    if command -v sha256sum >/dev/null
                     then
-                        dl "$URL.checksum" checksum.txt
+                        dl "$URL.checksum" checksum.txt >/dev/null 2>&1
                         read -r CHECKSUM < "checksum.txt"
                         if [[ "$CHECKSUM" == "$(sha256sum "repofiles.zip")" ]]
                         then echo "checksum: $CHECKSUM matched"
