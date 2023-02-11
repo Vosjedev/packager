@@ -69,6 +69,14 @@ function unreachable {
     [[ $exit -ge 0 ]] && exit "$exit"
 }
 
+function info {
+    _INFO_ECHO="$1"
+    if [[ ${#_INFO_ECHO} -ge $COLUMNS ]]
+    then echo "${_INFO_ECHO:0:$((COLUMNS-3))}..."
+    else echo "${_INFO_ECHO:0:$COLUMNS}"
+    fi
+}
+
 # .vpmscript handeling
 # shellcheck disable=SC2034,SC2162
 function script {
@@ -103,24 +111,18 @@ function script {
     if command -v axel >/dev/null
     then
         function dl {
-            while read -r line
-            do echo -ne "${line:0:$((COLUMNS-1))}\r"
-            done <<< "$(axel -a "$1" -o "$2")"
+            axel -o "$2" -- "$1"
         }
     elif command -v curl >/dev/null
     then
         function dl {
             echo "downloading \"$1\""
-            while read -r line
-            do echo -ne "${line:0:$((COLUMNS-1))}\r"
-            done <<< "$(curl -# -o "$2" "$1")"
+            curl -# -o "$2" -- "$1"
         }
     elif command -v wget -nv --show-progress >/dev/null
     then
         function dl {
-            while read -r line
-            do echo -ne "${line:0:$((COLUMNS-1))}\r"
-            done <<< "$(wget "$1" -O "$2")"
+            wget -O "$2" -- "$1"
         }
     else
         echo -e "-------------\nno supported downloader found. make sure to have one of the following installed and in the PATH:\n"\
@@ -307,18 +309,14 @@ function refresh {
         resolvefile "$repo"
         code=$?
         [[ $code == 1 ]] && echo "error! resolvefile exited with code $code" && continue
-        entry="TYPE='$TYPE' NAME='$NAME' FORMAT='$FORMAT' URL='$URL'"
-        if [[ ${#entry} -ge $COLUMNS ]]
-        then echo "${entry:0:$((COLUMNS-3))}..."
-        else echo "${entry:0:$COLUMNS}"
-        fi
+        info "TYPE='$TYPE' NAME='$NAME' FORMAT='$FORMAT' URL='$URL'"
         [[ "$TYPE" == repo ]] || {
-            echo "OOPS! file is not a repository! skipping repo '$NAME' ..."
+            info "OOPS! file is not a repository! skipping repo '$NAME' ..."
             continue
         }
         cd repo || return 1
         [[ -d "$ID" ]] && {
-            echo "repo $NAME already here. deleting it's cache..."
+            info "repo $NAME already here. deleting it's cache..."
             rm -rf "$ID"
             }
         mkdir "$ID"
@@ -332,7 +330,7 @@ function refresh {
                         dl "$URL.checksum" checksum.txt
                         read -r CHECKSUM < "checksum.txt"
                         if [[ "$CHECKSUM" == "$(sha256sum "repofiles.zip")" ]]
-                        then echo "checksum: $CHECKSUM matched"
+                        then info "checksum: $CHECKSUM matched"
                         else echo -e "checksum $CHECKSUM failed to match.\ndo you want to continue?"
                             read -rsn1 -p "[y for yes, anything else for no]" i
                             case $i in
