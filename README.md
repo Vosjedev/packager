@@ -39,7 +39,6 @@ format  = http/zip
 /# git      : clone URL using git clone command. no sha256sum support
 /# this option is disabled as only zip is currently supported for repos.
 /#
-/# make sure your file does not contain any empty lines, exept at the end.
 
 ```
 this file can be as short as:
@@ -73,7 +72,6 @@ info    = a short desciption about my program
 readme  = README.md
 /# the file to display if a user wants a long desciption.
 /#
-/# make sure your file does not contain any empty lines, exept at the end.
 
 ```
 the short version:
