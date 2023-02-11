@@ -103,18 +103,24 @@ function script {
     if command -v axel >/dev/null
     then
         function dl {
-            axel "$1" -o "$2"
+            while read -r line
+            do echo -ne "${line:0:$((COLUMNS-1))}\r"
+            done <<< "$(axel -a "$1" -o "$2")"
         }
     elif command -v curl >/dev/null
     then
         function dl {
             echo "downloading \"$1\""
-            axel -# -o "$2" "$1"
+            while read -r line
+            do echo -ne "${line:0:$((COLUMNS-1))}\r"
+            done <<< "$(curl -# -o "$2" "$1")"
         }
-    elif command -v wget >/dev/null
+    elif command -v wget -nv --show-progress >/dev/null
     then
         function dl {
-            wget "$1" -O "$2"
+            while read -r line
+            do echo -ne "${line:0:$((COLUMNS-1))}\r"
+            done <<< "$(wget "$1" -O "$2")"
         }
     else
         echo -e "-------------\nno supported downloader found. make sure to have one of the following installed and in the PATH:\n"\
@@ -301,7 +307,11 @@ function refresh {
         resolvefile "$repo"
         code=$?
         [[ $code == 1 ]] && echo "error! resolvefile exited with code $code" && continue
-        echo "TYPE='$TYPE' NAME='$NAME' FORMAT='$FORMAT' URL='$URL'"
+        entry="TYPE='$TYPE' NAME='$NAME' FORMAT='$FORMAT' URL='$URL'"
+        if [[ ${#entry} -ge $COLUMNS ]]
+        then echo "${entry:0:$((COLUMNS-3))}..."
+        else echo "${entry:0:$COLUMNS}"
+        fi
         [[ "$TYPE" == repo ]] || {
             echo "OOPS! file is not a repository! skipping repo '$NAME' ..."
             continue
@@ -319,7 +329,7 @@ function refresh {
                     dl "$URL" repofiles.zip
                     if command -v sha256sum >/dev/null
                     then
-                        dl "$URL.checksum" checksum.txt >/dev/null 2>&1
+                        dl "$URL.checksum" checksum.txt
                         read -r CHECKSUM < "checksum.txt"
                         if [[ "$CHECKSUM" == "$(sha256sum "repofiles.zip")" ]]
                         then echo "checksum: $CHECKSUM matched"
