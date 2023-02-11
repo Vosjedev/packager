@@ -62,24 +62,43 @@ fi
 #     help 1
 # }
 
+function unreachable {
+    info="no further info"
+    exit="255"
+    [[ "$1" == '' ]] && info="$1"
+    [[ "$2" == '' ]] && exit="$2"
+    echo -e "\e[1;31;40mreached unreachable code:\n\e[0m${FUNCNAME[*]}\ninfo provided by function: $info\n"
+    [[ $exit -ge 0 ]] && exit "$exit"
+}
+
 # .vpmscript handeling
+# shellcheck disable=SC2034,SC2162
 function script {
     line=1
-    # shellcheck disable=SC2034
-    while read -r cmd a1 a2 a3 a4 a5 a6 arg
+    vpmscript_uid="$(date +%s_%N)"
+    mkdir -p "$data/bash/"
+    mkfifo "$data/bash/$vpmscript_uid"
+    { tail -f "$data/bash/$vpmscript_uid" | bash & } 2>/dev/null
+    eval "procid_$vpmscript_uid='$!'"
+    while read cmd a1 a2 a3 a4 a5 a6 arg
     do
-        case $cmd in
-            R   ) eval "$a1"        ;;
-            r   ) rm -rf "$a1"      ;;
-            t   ) touch "$a1"       ;;
-            d   ) mkdir "$a1"       ;;
-            l   ) ln -s "$a1" "$a2" ;;
-            c   ) cp -r "$a1" "$a2" ;;
-            m   ) cp -r "$a1" "$a2" && rm -rf "$a1" ;;
+        case "$cmd" in
+            R | run ) echo "eval \"$a1\" \"$a2\" \"$a3\" \"$a4\" \"$a5\" \"$a6\" \"$arg\""  >> "$data/bash/$vpmscript_uid";;
+            r | rm  ) echo "rm -rf \"$a1\""                                                 >> "$data/bash/$vpmscript_uid";;
+            t | mf  ) echo "echo -n '' >> \"$a1\""                                          >> "$data/bash/$vpmscript_uid";;
+            d | md  ) echo "mkdir \"$a1\""                                                  >> "$data/bash/$vpmscript_uid";;
+            l | lk  ) echo "ln -s \"$a1\" \"$a2\""                                          >> "$data/bash/$vpmscript_uid";;
+            c | cp  ) echo "cp -r \"$a1\" \"$a2\""                                          >> "$data/bash/$vpmscript_uid";;
+            m | mv  ) echo "cp -r \"$a1\" \"$a2\" && rm -rf \"$a1\""                        >> "$data/bash/$vpmscript_uid";;
+            e | ex  ) echo "exit $a1"                                                       >> "$data/bash/$vpmscript_uid";;
+            s | scr ) script "$a1";;
             *   ) echo "error: '$1'@'$line': '$cmd' not found."
         esac
+        ((line++))
     done < "$1"
-    ((line++))
+    echo "exit" >> "$data/bash/$vpmscript_uid"
+    eval "wait \$procid_$vpmscript_uid"
+    rm -f "$data/bash/$vpmscript_uid"
 }
 
 # set functions
@@ -193,7 +212,7 @@ function remove {
     do
         resolvefile "$program/info.vpmfile"
         if [[ "$NAME" == "$1" ]]
-        then read -p "are you sure you want to remove program $NAME with id $ID? [Y/n] " in
+        then read -rp "are you sure you want to remove program $NAME with id $ID? [Y/n] " in
             case $in in
                 y | yes ) 
                         [[ -f "remove.vpmscript" ]] && script remove.vmpscript
@@ -269,16 +288,16 @@ function refresh {
 }
 
 function update-all {
-    cd "$HOME/.vosjedev"
+    cd "$HOME/.vosjedev" || { echo "you should download and install vpm using the commands in the README."; exit 255;}
     for program in *
     do
         [[ ! -d "$program" ]] && continue
-        cd "$program"
+        cd "$program" || unreachable "error while cding to \"$HOME/.vosjedev/$program\". if the program is uninstalled, please run vpm again."
         resolvefile info.vpmfile
         case $FORMAT in
             git ) git pull
         esac
-        cd "$HOME/.vosjedev"
+        cd "$HOME/.vosjedev" || { echo "you should download and install vpm using the commands in the README."; exit 255;}
     done
 }
 
