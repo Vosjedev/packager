@@ -356,7 +356,7 @@ function update-all {
     done
 }
 
-PS2="+ ${FUNCNAME[*]}: "
+PS2='+ ${FUNCNAME[*]}: '
 [[ -v debug ]] && set -x
 skip=0
 # parse arguments
