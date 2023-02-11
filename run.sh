@@ -243,7 +243,7 @@ function install {
 }
 function download {
     case $FORMAT in
-        git     ) cd "$HOME/.vosjedev/" && git -p clone "$URL" && cd "$ID" && echo "download done."     ;;
+        git     ) cd "$HOME/.vosjedev/" && git -p clone "$URL" && cd "$ID" && info "download done."     ;;
         *       ) echo "error: unkown format."
     esac
 }
@@ -305,7 +305,7 @@ function refresh {
     rm -rf repo/*
     for repo in "$data/repolist/"*".vpmfile"
     do
-        echo "'$repo' found!"
+        info "'$repo' found!"
         resolvefile "$repo"
         code=$?
         [[ $code == 1 ]] && echo "error! resolvefile exited with code $code" && continue
@@ -327,7 +327,7 @@ function refresh {
                     dl "$URL" repofiles.zip
                     if command -v sha256sum >/dev/null
                     then
-                        dl "$URL.checksum" checksum.txt
+                        dl "$URL.checksum" checksum.txt >/dev/null 2>&1
                         read -r CHECKSUM < "checksum.txt"
                         if [[ "$CHECKSUM" == "$(sha256sum "repofiles.zip")" ]]
                         then info "checksum: $CHECKSUM matched"
