@@ -311,10 +311,10 @@ function refresh {
         cd "$ID"
             case $FORMAT in
                 http/zip )
-                    dl "$URL/repofiles.zip" repofiles.zip
+                    dl "$URL" repofiles.zip
                     if command -v sha256sum
                     then
-                        dl "$URL/checksum.txt" checksum.txt
+                        dl "$URL.checksum" checksum.txt
                         read -r CHECKSUM < "checksum.txt"
                         if [[ "$CHECKSUM" == "$(sha256sum "repofiles.zip")" ]]
                         then echo "checksum: $CHECKSUM matched"
