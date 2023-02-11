@@ -351,7 +351,7 @@ function update-all {
         echo "updating:"
         listfile "info.vpmfile"
         case $FORMAT in
-            git ) git -p --no-rebase pull
+            git ) git -p pull --no-rebase 
         esac
         cd "$HOME/.vosjedev" || { echo "you should download and install vpm using the commands in the README."; exit 255;}
     done
