@@ -347,6 +347,8 @@ function update-all {
         [[ ! -d "$program" ]] && continue
         cd "$program" || unreachable "error while cding to \"$HOME/.vosjedev/$program\". if the program is uninstalled, please run vpm again."
         resolvefile info.vpmfile
+        echo "updating:"
+        listfile "info.vpmfile"
         case $FORMAT in
             git ) git pull
         esac
@@ -354,6 +356,7 @@ function update-all {
     done
 }
 
+PS2="+ ${FUNCNAME[*]}: "
 [[ -v debug ]] && set -x
 skip=0
 # parse arguments
