@@ -1,6 +1,0 @@
-/# see: (url on how to build these files later)
-type    = repo
-name    = vosjedev commandline apps (official repo)
-id      = vosjedev-cmd
-url     = http://vosjedev.pii.at/vpm/repo/cmd/repofiles.zip
-format  = http/zip
