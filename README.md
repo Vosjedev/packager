@@ -7,7 +7,7 @@ To add a repository, use the vpmfile from the repository's owner. Ask them if th
 
 ## installation  
 **automatic (recommended)**  
-` curl -sS http://vosjedev.pii.at/vpm/install.sh | bash `  
+` bash -c "$(curl -sS http://vosjedev.pii.at/vpm/install.sh)" `  
 or manual:  
 ` mkdir ~/.vosjedev && cd ~/.vosjedev && git clone https://github.com/vosjedev/packager `  
 and make sure wget is installed.  
